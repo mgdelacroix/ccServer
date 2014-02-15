@@ -16,6 +16,17 @@ ratpack {
             Map<String, String> mapa = [hola: 'mundo']
             response.send 'application/json', json(mapa)
         }
+        get('html') {
+            render htmlBuilder {
+                head {
+                    title 'Test html builder'
+                }
+                body {
+                    h1 'Yo soy tu padre'
+                    p 'en serio?'
+                }
+            }
+        }
         get(":a") {
             render "working on $context.pathTokens.a, yo"
         }
