@@ -10,7 +10,7 @@ ratpack {
     handlers {
         get {
             File file = new File('/tmp/file')
-            response.send contentType(), file.bytes
+            response.send 'image/jpg', file.bytes
         }
         get('json') {
             Map<String, String> mapa = [hello: 'world!']
@@ -23,6 +23,9 @@ ratpack {
                 }
                 body {
                     h1 "Yo (${context.pathTokens.name ?: 'Anonymous'}) soy tu padre"
+                    a (href: '/') {
+                        img src: '/', width: '300px', height: '175px'
+                    }
                     p 'en serio?'
                 }
             }
