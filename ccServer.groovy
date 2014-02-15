@@ -13,16 +13,16 @@ ratpack {
             response.send contentType(), file.bytes
         }
         get('json') {
-            Map<String, String> mapa = [hola: 'mundo']
+            Map<String, String> mapa = [hello: 'world!']
             response.send 'application/json', json(mapa)
         }
-        get('html') {
+        get('html/:name?') {
             render htmlBuilder {
                 head {
                     title 'Test html builder'
                 }
                 body {
-                    h1 'Yo soy tu padre'
+                    h1 "Yo (${context.pathTokens.name ?: 'Anonymous'}) soy tu padre"
                     p 'en serio?'
                 }
             }
