@@ -51,10 +51,6 @@ DefaultMarkup getImage(File image) {
                 text 'Basada en una obra en'
                 a 'xmlns:dct': "http://purl.org/dc/terms/", href: "http://URL", rel: "dct:source", 'http://URL'
             }
-            div {
-                text 'Permisos que vayan más allá de lo cubierto por esta licencia pueden encontrarse en'
-                a 'xmlns:cc': "http://creativecommons.org/ns#", href: "http://MAS-PERMISOS-URL", rel: "cc:morePermissions", 'http://MAS-PERMISOS-URL'
-            }
         }
     }
 
@@ -68,7 +64,7 @@ DefaultMarkup getImage(File image) {
             a (href: url) {
                 img src: url, height: '75%'
             }
-            div license
+            div style: 'width: 60%', license
             p { a href: '/', 'Volver atrás' }
         }
     }
