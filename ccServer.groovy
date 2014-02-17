@@ -4,11 +4,17 @@ import static ratpack.groovy.Groovy.*
 import ratpack.groovy.markup.internal.DefaultMarkup
 import com.dropbox.core.*
 
+DbxClient getDropboxClient() {
+    DbxClient client = new DbxClient(dropboxConfig, token)
+}
+
+DbxRequestConfig getDropboxConfig() {
+    new DbxRequestConfig("ccServer", new Locale('es') as String)
+}
+
 DbxWebAuthNoRedirect getDropboxWebAuth(String appKey, String appSecret) {
     DbxAppInfo appInfo = new DbxAppInfo(appKey, appSecret)
-
-    DbxRequestConfig dbConfig = new DbxRequestConfig("ccServer", new Locale('es') as String)
-    return new DbxWebAuthNoRedirect(dbConfig, appInfo)
+    return new DbxWebAuthNoRedirect(dropboxConfig, appInfo)
 }
 
 Boolean saveToken(String token) {
@@ -174,6 +180,19 @@ ratpack {
             saveToken(authFinish.accessToken)
 
             render token
+        }
+
+        get ('dropbox') {
+            render htmlBuilder {
+                body {
+                    h1 "Linked account: $dropboxClient.accountInfo.displayName"
+                    ul {
+                        dropboxClient.getMetadataWithChildren(configMap.dropbox.directory).children.each { child ->
+                            li "$child.name ==> $child"
+                        }
+                    }
+                }
+            }
         }
 
         assets 'public'
