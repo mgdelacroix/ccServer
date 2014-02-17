@@ -1,6 +1,35 @@
-@Grab("io.ratpack:ratpack-groovy:0.9.0")
+@Grab('io.ratpack:ratpack-groovy:0.9.0')
+@Grab('com.dropbox.core:dropbox-core-sdk:1.7.6')
 import static ratpack.groovy.Groovy.*
 import ratpack.groovy.markup.internal.DefaultMarkup
+import com.dropbox.core.*
+
+DbxWebAuthNoRedirect getDropboxWebAuth(String appKey, String appSecret) {
+    DbxAppInfo appInfo = new DbxAppInfo(appKey, appSecret)
+
+    DbxRequestConfig dbConfig = new DbxRequestConfig("ccServer", new Locale('es') as String)
+    return new DbxWebAuthNoRedirect(dbConfig, appInfo)
+}
+
+Boolean saveToken(String token) {
+    String homeDir = System.getProperty('user.home')
+    File tokenFile = new File(homeDir, '.ccServer/token')
+
+    if (tokenFile.exists()) tokenFile.delete()
+
+    tokenFile << token
+}
+
+String getToken() {
+    String homeDir = System.getProperty('user.home')
+    return new File(homeDir, '.ccServer/token').text
+}
+
+Map<String, String> getConfigMap() {
+    String homeDir = System.getProperty('user.home')
+    File configFile = new File(homeDir, '.ccServer/Config.groovy')
+    return new ConfigSlurper().parse(configFile.toURL())
+}
 
 String removePublicFromFile(File file) {
     return file.toString().split('/')[1..-1].join('/')
@@ -72,6 +101,7 @@ DefaultMarkup getImage(File image) {
 
 ratpack {
     handlers {
+
         get {
             render htmlBuilder {
                 head {
@@ -87,6 +117,7 @@ ratpack {
                             }
                         }
                     }
+                    code new groovy.json.JsonBuilder(configMap).toPrettyString()
                 }
             }
         }
@@ -103,6 +134,49 @@ ratpack {
             }
         }
 
+        get('sync') {
+            Map<String, String> config = configMap
+            DbxWebAuthNoRedirect webAuth = getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+
+            String authorizeUrl = webAuth.start()
+
+            render htmlBuilder {
+                head {
+                    title 'Dropbox Sync'
+                }
+                body {
+                    h1 'Sincronización con Dropbox'
+                    ol {
+                        li {
+                            span {
+                                text "Por favor, dirígete a"
+                                a href: authorizeUrl, target: '_blank', 'esta dirección'
+                            }
+                        }
+                        li 'Copia el código de autorización'
+                        li 'Introdúcelo en el campo que hay a continuación'
+                    }
+                    form (method: 'post', action: '/oauthBack') {
+                        input type: 'text', name: 'code', placeholder: 'código'
+                        input type: 'submit', value: 'Autenticar con Dropbox'
+                    }
+                }
+            }
+        }
+
+        post ('oauthBack') {
+            String code = request.text.split('=').last()
+
+            Map<String, String> config = configMap
+            DbxWebAuthNoRedirect webAuth = getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+
+            DbxAuthFinish authFinish = webAuth.finish(code)
+            saveToken(authFinish.accessToken)
+
+            render token
+        }
+
         assets 'public'
-    }
+ 
+   }
 }
