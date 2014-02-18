@@ -1,0 +1,20 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <title>Sincronización con Dropbox</title>
+  <meta name="viewport" content="width=device-width">
+</head>
+<body>
+  <h1>Sincronización con Dropbox</h1>
+  <ol>
+    <li>Por favor, dirígete a <a href="${model.authorizeUrl}" target="_blank">esta dirección</a></li>
+    <li>Copia el código de autorización</li>
+    <li>Introdúcelo en el campo que hay a continuación</li>
+  </ol>
+
+  <form method="POST" action="/oauthBack">
+    <input type="text" name="code" placeholder="código" />
+    <input type="submit" value="Autenticar con Dropbox" />
+  </form>
+</body>
+</html>

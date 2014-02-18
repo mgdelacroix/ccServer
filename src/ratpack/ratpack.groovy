@@ -1,39 +1,10 @@
 import static ratpack.groovy.Groovy.*
-import ratpack.groovy.markup.internal.DefaultMarkup
+import ccserver.Dropbox
+import ccserver.Config
 import com.dropbox.core.*
+import ratpack.groovy.markup.internal.DefaultMarkup
+import ratpack.form.Form
 
-DbxClient getDropboxClient() {
-    DbxClient client = new DbxClient(dropboxConfig, token)
-}
-
-DbxRequestConfig getDropboxConfig() {
-    new DbxRequestConfig("ccServer", new Locale('es') as String)
-}
-
-DbxWebAuthNoRedirect getDropboxWebAuth(String appKey, String appSecret) {
-    DbxAppInfo appInfo = new DbxAppInfo(appKey, appSecret)
-    return new DbxWebAuthNoRedirect(dropboxConfig, appInfo)
-}
-
-Boolean saveToken(String token) {
-    String homeDir = System.getProperty('user.home')
-    File tokenFile = new File(homeDir, '.ccServer/token')
-
-    if (tokenFile.exists()) tokenFile.delete()
-
-    tokenFile << token
-}
-
-String getToken() {
-    String homeDir = System.getProperty('user.home')
-    return new File(homeDir, '.ccServer/token').text
-}
-
-Map<String, String> getConfigMap() {
-    String homeDir = System.getProperty('user.home')
-    File configFile = new File(homeDir, '.ccServer/Config.groovy')
-    return new ConfigSlurper().parse(configFile.toURL())
-}
 
 String removePublicFromFile(File file) {
     return file.toString().split('/')[1..-1].join('/')
@@ -107,23 +78,7 @@ ratpack {
     handlers {
 
         get {
-            render htmlBuilder {
-                head {
-                    title 'Obras de Laura Pareja'
-                }
-                body {
-                    h1 'Obras de Laura Pareja'
-                    p 'Lista de las obras'
-                    ul {
-                        imagesMap.each { name, url ->
-                            li {
-                                a (href: "obra/$name", name)
-                            }
-                        }
-                    }
-                    code new groovy.json.JsonBuilder(configMap).toPrettyString()
-                }
-            }
+            render groovyTemplate('index.html', imagesMap: imagesMap)
         }
 
         get('obra/:filename') {
@@ -139,58 +94,40 @@ ratpack {
         }
 
         get('sync') {
-            Map<String, String> config = configMap
-            DbxWebAuthNoRedirect webAuth = getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+            if (new Config().token) {
+                render 'Aplicación sincronizada'
+            } else {
+                Map<String, String> config = new Config().configMap
 
-            String authorizeUrl = webAuth.start()
+                DbxWebAuthNoRedirect webAuth = new Dropbox().getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+                String authorizeUrl = webAuth.start()
 
-            render htmlBuilder {
-                head {
-                    title 'Dropbox Sync'
-                }
-                body {
-                    h1 'Sincronización con Dropbox'
-                    ol {
-                        li {
-                            span {
-                                text "Por favor, dirígete a"
-                                a href: authorizeUrl, target: '_blank', 'esta dirección'
-                            }
-                        }
-                        li 'Copia el código de autorización'
-                        li 'Introdúcelo en el campo que hay a continuación'
-                    }
-                    form (method: 'post', action: '/oauthBack') {
-                        input type: 'text', name: 'code', placeholder: 'código'
-                        input type: 'submit', value: 'Autenticar con Dropbox'
-                    }
-                }
+                render groovyTemplate('sync.html', authorizeUrl: authorizeUrl)
             }
         }
 
         post ('oauthBack') {
-            String code = request.text.split('=').last()
+            Form form = parse(Form.class)
 
-            Map<String, String> config = configMap
-            DbxWebAuthNoRedirect webAuth = getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+            Map<String, String> config = new Config().configMap
+            DbxWebAuthNoRedirect webAuth = new Dropbox().getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+            println "He llamado a dropbox: $webAuth"
 
-            DbxAuthFinish authFinish = webAuth.finish(code)
-            saveToken(authFinish.accessToken)
+            DbxAuthFinish authFinish = webAuth.finish(form.code)
 
-            render token
+            new Config().saveToken(authFinish.accessToken)
+
+            render groovyTemplate('oauthBack.html')
         }
 
         get ('dropbox') {
-            render htmlBuilder {
-                body {
-                    h1 "Linked account: $dropboxClient.accountInfo.displayName"
-                    ul {
-                        dropboxClient.getMetadataWithChildren(configMap.dropbox.directory).children.each { child ->
-                            li "$child.name ==> $child"
-                        }
-                    }
-                }
-            }
+            String directory = new Config().configMap.dropbox.directory
+            String token = new Config().token
+            def dropboxClient = new Dropbox().getDropboxClient(token)
+            def dbxFolder = dropboxClient.getMetadataWithChildren(directory)
+            String accountName = dropboxClient.accountInfo.displayName
+            
+            render groovyTemplate('dropbox.html', accountName: accountName, directory: directory, dbxFolder: dbxFolder)
         }
 
         assets 'public'

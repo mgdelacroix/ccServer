@@ -1,0 +1,16 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <title>Cuenta linkada: ${model.accountName}</title>
+  <meta name="viewport" content="width=device-width">
+</head>
+<body>
+  <h1>Cuenta linkada: ${model.accountName}</h1>
+  <p>Contenido del directorio <em>${model.directory}</em></p>
+  <ul>
+    <% model.dbxFolder.children.each { child -> %>
+      <li><strong>$child.name</strong> ==> <em>$child</em></li>
+    <% } %>
+  </ul>
+</body>
+</html>
