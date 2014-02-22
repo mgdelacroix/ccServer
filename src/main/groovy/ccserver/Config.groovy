@@ -2,7 +2,7 @@ package ccserver
 
 class Config {
 
-    Boolean saveToken(String token) {
+    static Boolean saveToken(String token) {
         String homeDir = System.getProperty('user.home')
         File tokenFile = new File(homeDir, '.ccServer/token')
 
@@ -11,12 +11,12 @@ class Config {
         tokenFile << token
     }
 
-    String getToken() {
+    static String getToken() {
         String homeDir = System.getProperty('user.home')
         return new File(homeDir, '.ccServer/token').text
     }
 
-    Map<String, String> getConfigMap() {
+    static Map<String, String> getConfigMap() {
         String homeDir = System.getProperty('user.home')
         File configFile = new File(homeDir, '.ccServer/Config.groovy')
         return new ConfigSlurper().parse(configFile.toURL())

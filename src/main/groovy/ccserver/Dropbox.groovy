@@ -7,15 +7,15 @@ import com.dropbox.core.DbxAppInfo
 
 class Dropbox {
 
-    DbxClient getDropboxClient(String token) {
+    static DbxClient getDropboxClient(String token) {
         DbxClient client = new DbxClient(dropboxConfig, token)
     }
 
-    DbxRequestConfig getDropboxConfig() {
+    static DbxRequestConfig getDropboxConfig() {
         new DbxRequestConfig("ccServer", new Locale('es') as String)
     }
 
-    DbxWebAuthNoRedirect getDropboxWebAuth(String appKey, String appSecret) {
+    static DbxWebAuthNoRedirect getDropboxWebAuth(String appKey, String appSecret) {
         DbxAppInfo appInfo = new DbxAppInfo(appKey, appSecret)
         return new DbxWebAuthNoRedirect(dropboxConfig, appInfo)
     }

@@ -1,6 +1,6 @@
 import static ratpack.groovy.Groovy.*
-import ccserver.Dropbox
-import ccserver.Config
+import static ccserver.Dropbox.*
+import static ccserver.Config.*
 import com.dropbox.core.*
 import ratpack.groovy.markup.internal.DefaultMarkup
 import ratpack.form.Form
@@ -94,12 +94,12 @@ ratpack {
         }
 
         get('sync') {
-            if (new Config().token) {
+            if (token) {
                 render 'Aplicación sincronizada'
             } else {
-                Map<String, String> config = new Config().configMap
+                Map<String, String> config = configMap
 
-                DbxWebAuthNoRedirect webAuth = new Dropbox().getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+                DbxWebAuthNoRedirect webAuth = getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
                 String authorizeUrl = webAuth.start()
 
                 render groovyTemplate('sync.html', authorizeUrl: authorizeUrl)
@@ -109,21 +109,20 @@ ratpack {
         post ('oauthBack') {
             Form form = parse(Form.class)
 
-            Map<String, String> config = new Config().configMap
-            DbxWebAuthNoRedirect webAuth = new Dropbox().getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
+            Map<String, String> config = configMap
+            DbxWebAuthNoRedirect webAuth = getDropboxWebAuth(config.dropbox.appKey as String, config.dropbox.appSecret as String)
             println "He llamado a dropbox: $webAuth"
 
             DbxAuthFinish authFinish = webAuth.finish(form.code)
 
-            new Config().saveToken(authFinish.accessToken)
+            saveToken(authFinish.accessToken)
 
             render groovyTemplate('oauthBack.html')
         }
 
         get ('dropbox') {
-            String directory = new Config().configMap.dropbox.directory
-            String token = new Config().token
-            def dropboxClient = new Dropbox().getDropboxClient(token)
+            String directory = configMap.dropbox.directory
+            def dropboxClient = getDropboxClient(token)
             def dbxFolder = dropboxClient.getMetadataWithChildren(directory)
             String accountName = dropboxClient.accountInfo.displayName
             
